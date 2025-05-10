@@ -5,6 +5,9 @@
 [![PyPi Package](https://img.shields.io/pypi/v/inky.svg)](https://pypi.python.org/pypi/inky)
 [![Python Versions](https://img.shields.io/pypi/pyversions/inky.svg)](https://pypi.python.org/pypi/inky)
 
+👉 This is a fork that modifies dithering results for Spectra6 display.
+Original implementation produces overexposed images, this fork addresses this issue.
+
 Python library for [Inky pHAT](https://shop.pimoroni.com/products/inky-phat), [Inky wHAT](https://shop.pimoroni.com/products/inky-what) and [Inky Impression](https://shop.pimoroni.com/?q=inky+impression) e-paper displays for Raspberry Pi.
 
 ### Inky pHAT

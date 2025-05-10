@@ -94,9 +94,20 @@ class Inky:
         [0, 255, 0],
         [255, 255, 255]]
 
-    SATURATED_PALETTE = [
+    # Original Inky palette. Produces overexposed images
+    SATURATED_PALETTE_ORIGINAL = [
         [0, 0, 0],
         [161, 164, 165],
+        [208, 190, 71],
+        [156, 72, 75],
+        [61, 59, 94],
+        [58, 91, 70],
+        [255, 255, 255]]
+
+    # New custom palette
+    SATURATED_PALETTE = [
+        [0, 0, 0],
+        [220, 220, 165],
         [208, 190, 71],
         [156, 72, 75],
         [61, 59, 94],
