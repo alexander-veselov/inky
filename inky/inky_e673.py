@@ -94,8 +94,7 @@ class Inky:
         [0, 255, 0],
         [255, 255, 255]]
 
-    # Original Inky palette. Produces overexposed images
-    SATURATED_PALETTE_ORIGINAL = [
+    SATURATED_PALETTE = [
         [0, 0, 0],
         [161, 164, 165],
         [208, 190, 71],
@@ -104,15 +103,13 @@ class Inky:
         [58, 91, 70],
         [255, 255, 255]]
 
-    # New custom palette
-    SATURATED_PALETTE = [
+    BLENDED_PALETTE = [
         [0, 0, 0],
-        [220, 220, 165],
-        [208, 190, 71],
-        [156, 72, 75],
-        [61, 59, 94],
-        [58, 91, 70],
-        [255, 255, 255]]
+        [208, 209, 210],
+        [231, 222, 35],
+        [205, 36, 37],
+        [30, 29, 174],
+        [29, 173, 35]]
 
     def __init__(self, resolution=None, colour="multi", cs_pin=CS0_PIN, dc_pin=DC_PIN, reset_pin=RESET_PIN, busy_pin=BUSY_PIN, h_flip=False, v_flip=False, spi_bus=None, i2c_bus=None, gpio=None):  # noqa: E501
         """Initialise an Inky Display.
@@ -169,11 +166,10 @@ class Inky:
         self._luts = None
 
     def _palette_blend(self, saturation, dtype="uint8"):
-        saturation = float(saturation)
         palette = []
         for i in range(6):
-            rs, gs, bs = [c * saturation for c in self.SATURATED_PALETTE[i]]
-            rd, gd, bd = [c * (1.0 - saturation) for c in self.DESATURATED_PALETTE[i]]
+            rs, gs, bs = [c * saturation[i] for c in self.SATURATED_PALETTE[i]]
+            rd, gd, bd = [c * (1.0 - saturation[i]) for c in self.DESATURATED_PALETTE[i]]
             if dtype == "uint8":
                 palette += [int(rs + rd), int(gs + gd), int(bs + bd)]
             if dtype == "uint24":
@@ -200,7 +196,7 @@ class Inky:
                         self.cs_pin: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.ACTIVE, bias=Bias.DISABLED),
                         self.dc_pin: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.INACTIVE, bias=Bias.DISABLED),
                         self.reset_pin: gpiod.LineSettings(direction=Direction.OUTPUT, output_value=Value.ACTIVE, bias=Bias.DISABLED),
-                        self.busy_pin: gpiod.LineSettings(direction=Direction.INPUT, bias=Bias.PULL_UP)
+                        self.busy_pin: gpiod.LineSettings(direction=Direction.InumpyUT, bias=Bias.PULL_UP)
                     })
 
             if self._spi_bus is None:
@@ -310,7 +306,22 @@ class Inky:
         if colour in (BLACK, WHITE, GREEN, BLUE, RED, YELLOW):
             self.border_colour = colour
 
-    def set_image(self, image, saturation=0.5):
+    def _auto_saturation(self, image, delta=0.4):
+        image = numpy.array(image.convert("RGB")).reshape(-1, 3)
+
+        distances = numpy.linalg.norm(image[:, None] - numpy.array(self.BLENDED_PALETTE)[None, :], axis=2)
+        closest_palette_idx = numpy.argmin(distances, axis=1)
+
+        usage = numpy.bincount(closest_palette_idx, minlength=6).astype(numpy.float32)
+        usage /= usage.sum()
+
+        inverted = 1.0 - usage
+        centered = inverted - inverted.mean()
+        adjusted = 0.5 + delta * (centered / numpy.max(numpy.abs(centered)))
+
+        return numpy.clip(adjusted, 0.5 - delta, 0.5 + delta).tolist()
+
+    def set_image(self, image):
         """Copy an image to the display.
 
         :param image: PIL image to copy, must be 800x480
@@ -341,6 +352,7 @@ class Inky:
                 dither = Image.Dither.NONE
         else:
             # All other image should be quantized and dithered
+            saturation = self._auto_saturation(image)
             palette = self._palette_blend(saturation)
             palette_image.putpalette(palette)
 
