@@ -92,7 +92,8 @@ class Inky:
         [255, 0, 0],
         [0, 0, 255],
         [0, 255, 0],
-        [255, 255, 255]]
+        [255, 255, 255]
+    ]
 
     SATURATED_PALETTE = [
         [0, 0, 0],
@@ -101,15 +102,17 @@ class Inky:
         [156, 72, 75],
         [61, 59, 94],
         [58, 91, 70],
-        [255, 255, 255]]
+        [255, 255, 255]
+    ]
 
-    BLENDED_PALETTE = [
-        [0, 0, 0],
-        [208, 209, 210],
-        [231, 222, 35],
-        [205, 36, 37],
-        [30, 29, 174],
-        [29, 173, 35]]
+    SATURATION = [
+        0.5,
+        0.125,
+        0.575,
+        0.69,
+        0.875,
+        0.978 # TODO: implement automatic small green adjustment
+    ]
 
     def __init__(self, resolution=None, colour="multi", cs_pin=CS0_PIN, dc_pin=DC_PIN, reset_pin=RESET_PIN, busy_pin=BUSY_PIN, h_flip=False, v_flip=False, spi_bus=None, i2c_bus=None, gpio=None):  # noqa: E501
         """Initialise an Inky Display.
@@ -306,21 +309,6 @@ class Inky:
         if colour in (BLACK, WHITE, GREEN, BLUE, RED, YELLOW):
             self.border_colour = colour
 
-    def _auto_saturation(self, image, delta=0.4):
-        image = numpy.array(image.convert("RGB")).reshape(-1, 3)
-
-        distances = numpy.linalg.norm(image[:, None] - numpy.array(self.BLENDED_PALETTE)[None, :], axis=2)
-        closest_palette_idx = numpy.argmin(distances, axis=1)
-
-        usage = numpy.bincount(closest_palette_idx, minlength=6).astype(numpy.float32)
-        usage /= usage.sum()
-
-        inverted = 1.0 - usage
-        centered = inverted - inverted.mean()
-        adjusted = 0.5 + delta * (centered / numpy.max(numpy.abs(centered)))
-
-        return numpy.clip(adjusted, 0.5 - delta, 0.5 + delta).tolist()
-
     def set_image(self, image):
         """Copy an image to the display.
 
@@ -352,8 +340,7 @@ class Inky:
                 dither = Image.Dither.NONE
         else:
             # All other image should be quantized and dithered
-            saturation = self._auto_saturation(image)
-            palette = self._palette_blend(saturation)
+            palette = self._palette_blend(self.SATURATION)
             palette_image.putpalette(palette)
 
         image = image.convert("RGB").quantize(6, palette=palette_image, dither=dither)
