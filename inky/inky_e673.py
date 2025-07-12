@@ -97,21 +97,21 @@ class Inky:
 
     SATURATED_PALETTE = [
         [0, 0, 0],
-        [161, 164, 165],
-        [208, 190, 71],
-        [156, 72, 75],
-        [61, 59, 94],
-        [58, 91, 70],
+        [221, 221, 221],
+        [225, 225, 15],
+        [141, 17, 21],
+        [39, 71, 130],
+        [25, 82, 49],
         [255, 255, 255]
     ]
 
     SATURATION = [
         0.5,
-        0.125,
-        0.575,
-        0.69,
-        0.875,
-        0.978 # TODO: implement automatic small green adjustment
+        0.3,
+        0.0,
+        0.8,
+        0.7,
+        0.7
     ]
 
     def __init__(self, resolution=None, colour="multi", cs_pin=CS0_PIN, dc_pin=DC_PIN, reset_pin=RESET_PIN, busy_pin=BUSY_PIN, h_flip=False, v_flip=False, spi_bus=None, i2c_bus=None, gpio=None):  # noqa: E501
